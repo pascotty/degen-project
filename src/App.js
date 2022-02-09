@@ -6,9 +6,13 @@ import * as tf from '@tensorflow/tfjs';
 
 import Webcam from "react-webcam";
 
-
+import UploadAndDisplayImage from "./UploadAndDisplayImage"
 
 function App() {
+
+  //Create own model using e6 data...
+
+  
 
 
   //CocoSSD, should load model we choose -> still confusing
@@ -29,28 +33,24 @@ function App() {
   useEffect(() => { tf.ready().then(() => { loadModel(); }); }, []);
   //Below we load image and predict
 
-  const webcamRef = React.useRef(null);
   const [videoWidth, setVideoWidth] = useState(960);
   const [videoHeight, setVideoHeight] = useState(640);
-  const videoConstraints = {
-    height: 1080,
-    width: 1920,
-    facingMode: "environment",
-  };
   async function predictionFunction() {
     //Clear the canvas for each prediction
     var cnvs = document.getElementById("myCanvas");
-    var ctx = cnvs.getContext("2d");
-    ctx.clearRect(0,0, webcamRef.current.video.videoWidth,webcamRef.current.video.videoHeight);
+    var context = cnvs.getContext("2d");
+    context.clearRect(0,0,cnvs.width,cnvs.height);
     //Start prediction
+
     const predictions = await model.detect(document.getElementById("img"));
 
+    
     if (predictions.length > 0) {
       console.log(predictions);
       for (let n = 0; n < predictions.length; n++) {
         console.log(n);
-        if (predictions[n].score > 0.5) {
-          //Threshold is 0.5 or 50%
+        if (predictions[n].score >= 0.1) {
+          //Threshold is 0.1 or 10%
           //Extracting the coordinate and the bounding box information
           let bboxLeft = predictions[n].bbox[0];
           let bboxTop = predictions[n].bbox[1];
@@ -61,37 +61,43 @@ function App() {
           console.log("bboxWidth: " + bboxWidth);
           console.log("bboxHeight: " + bboxHeight);
           //Drawing begin
-          ctx.beginPath();
-          ctx.font = "28px Arial";
-          ctx.fillStyle = "red";
-          ctx.fillText(
-          predictions[n].class +": " + Math.round(parseFloat(predictions[n].score) * 100) + "%", bboxLeft,bboxTop);
-          ctx.rect(bboxLeft, bboxTop, bboxWidth, bboxHeight);
-          ctx.strokeStyle = "#FF0000";
-          ctx.lineWidth = 3;
-          ctx.stroke();
+          context.beginPath();
+          context.font = "12px Arial";
+          context.fillStyle = "red";
+          context.fillText(
+          predictions[n].class +": " + Math.round(parseFloat(predictions[n].score) * 100) + "%", bboxLeft,bboxTop+95);
+          context.rect(bboxLeft, bboxTop+100, bboxWidth, bboxHeight);
+          context.strokeStyle = "#FF0000";
+          context.lineWidth = 3;
+          context.stroke();
           console.log("detected");
         }
       }
     }
     //Rerun prediction by timeout
-    setTimeout(() => predictionFunction(), 500);
+    //setTimeout(() => predictionFunction(), 500);
   }
 
 
-  //Below is the web interface, should have a place to UPLOAD an image, then predict on that image
+  //Below is the web interface, should have a place to UPLOAD an image, then predict on that image, draw what it is
   return (
 
     <div className="App">
-      <button variant={"contained"} style={{ color: "white",backgroundColor: "blueviolet",width: "50%",maxWidth: "250px" }} onClick={() => { predictionFunction(); }}>
-      Start Detect
+
+
+      <div style={{position: "absolute", top: "50px"}}>
+        <UploadAndDisplayImage id="img" />
+      </div>
+      <div style={{position: "absolute", top: "50px", pointerEvents:"none", zIndex: "15"}}>
+        <canvas id="myCanvas" width={videoWidth} height={videoHeight} style={{backgroundColor: "transparent" }} />
+      </div>
+
+      <button variant={"contained"} style={{ color: "white",backgroundColor: "blueviolet",width: "50%",maxWidth: "250px", top: "100px"}} onClick={() => { predictionFunction(); }}>
+        Start Detect
       </button>
-      <div style={{ position: "absolute", top: "400px" }}>
-        <Webcam audio={false} id="img" ref={webcamRef} screenshotQuality={1} screenshotFormat="image/jpeg" videoConstraints={videoConstraints} />
-      </div>
-      <div style={{ position: "absolute", top: "400px", zIndex: "9999" }}>
-        <canvas id="myCanvas" width={videoWidth} height={videoHeight} style={{ backgroundColor: "transparent" }} />
-      </div>
+
+
+
     </div>
   );
 }

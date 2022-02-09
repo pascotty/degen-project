@@ -5,20 +5,19 @@ const UploadAndDisplayImage = () => {
 
   return (
     <div>
-      <h1>Upload and Display Image usign React Hook's</h1>
+      <h1>Upload Image to detect</h1>
       {selectedImage && (
         <div>
-        <img alt="not fount" width={"250px"} src={URL.createObjectURL(selectedImage)} />
+        <img id="img" alt="Not Found" width={"500px"} src={URL.createObjectURL(selectedImage)} />
         <br />
-        <button onClick={()=>setSelectedImage(null)}>Remove</button>
+        <button style={{zIndex: "20"}} onClick={()=>setSelectedImage(null)}>Remove</button>
         </div>
       )}
       <br />
-     
       <br /> 
-      <input
+      <input style={{zIndex: "20"}}
         type="file"
-        name="myImage"
+        name="myImg"
         onChange={(event) => {
           console.log(event.target.files[0]);
           setSelectedImage(event.target.files[0]);
@@ -26,6 +25,7 @@ const UploadAndDisplayImage = () => {
       />
     </div>
   );
+
 };
 
 export default UploadAndDisplayImage;
