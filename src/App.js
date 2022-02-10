@@ -8,43 +8,90 @@ import Webcam from "react-webcam";
 
 import UploadAndDisplayImage from "./UploadAndDisplayImage"
 
+import DataFaces from "./data/faces_q.csv"
+import TestFaces from "./data/test.csv"
+import TrainDataStream from "./data/train/"
 function App() {
 
-  //Create own model using e6 data...
-
-  
-
-
-  //CocoSSD, should load model we choose -> still confusing
-
-  const [model, setModel] = useState();
-
-  async function loadModel() {
-    try {
-      const model = await cocoSsd.load();
-      setModel(model);
-      console.log("set loaded model");
-    } 
-    catch (err) {
-      console.log(err);
-      console.log("failed load model");
-    }
-  }
-  useEffect(() => { tf.ready().then(() => { loadModel(); }); }, []);
-  //Below we load image and predict
-
+  var [model, setModel] = useState();
   const [videoWidth, setVideoWidth] = useState(960);
   const [videoHeight, setVideoHeight] = useState(640);
+
+  //Create a text file for EACH LINE (each image) from the csv file
+
+
+
+
+
+
+
+/* TENSORFLOW ATEMPT at CNN, need training images to be tensors
+
+  async function loadData(){
+    const csvUrl = "https://raw.githubusercontent.com/arfafax/E621-Face-Dataset/master/faces_q.csv";
+    const trainingData = tf.data.csv(TestFaces,{columnConfigs: {species:{isLabel: true}}});
+    const numOfFeatures = (await trainingData.columnNames()).length - 1; //# of species = # of classifiers
+
+    //After reading in numOfFeatures, take the last col (species), count # of UNIQUE species, make that the input Shape if possible??
+    console.log((await trainingData.columnNames())[16]);
+
+    const numOfSamples = 10; //test #, will change later
+    const convertedData = trainingData.map(({xs, ys}) => {
+                      const labels = [
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0, //just testing, need to make this unique per species... 
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                            ys.species == (trainingData.columnNames())[16] ? 1 : 0,
+                      ]           
+                      return{ xs: Object.values(xs), ys: Object.values(labels)};
+    }).batch(1);
+
+    model = tf.sequential();
+    model.add(tf.layers.dense({inputShape: [numOfFeatures], activation: "relu", units: 5})) //activation can be sigmoid <- more accurate/tradeoff
+    //model.add(tf.layers.dense({activation: "softmax", units: 8}))
+    //model.add(tf.layers.dense({activation: "relu", units: 5}))
+    model.add(tf.layers.dense({activation: "sigmoid", units: 14}));
+
+    model.compile({loss: "categoricalCrossentropy", optimizer: tf.train.adam(0.06)});
+    await model.fitDataset(convertedData, 
+    { 
+
+      epochs:100,
+      callbacks:{
+        onEpochEnd: async(epoch, logs) =>{
+          console.log("Epoch: " + epoch + " Loss: " + parseFloat(logs.loss));
+        }
+      } 
+    });
+
+    const testVal = tf.tensor2d([4.4, 2.9, 1.4, 0.2], [1, 4]);
+
+  }
+  loadData();
+*/
+  //Below we load image and predict
+
   async function predictionFunction() {
     //Clear the canvas for each prediction
     var cnvs = document.getElementById("myCanvas");
     var context = cnvs.getContext("2d");
     context.clearRect(0,0,cnvs.width,cnvs.height);
     //Start prediction
+    console.log(document.getElementById("img"));
+    //const predictions = await model.detect(document.getElementById("img"));
 
-    const predictions = await model.detect(document.getElementById("img"));
+    const predictions = await model.predict((document.getElementById("img")), [1]); //might work too
 
-    
     if (predictions.length > 0) {
       console.log(predictions);
       for (let n = 0; n < predictions.length; n++) {
