@@ -11,6 +11,10 @@ import UploadAndDisplayImage from "./UploadAndDisplayImage"
 //import TestFaces from "./data/test.csv"
 function App() {
   
+
+  var numberOfImages = 1000;   
+
+
   var model = useState(); //might use [model, setModel] here after we train
   const videoWidth  = useState(960);
   const videoHeight  = useState(640);
@@ -32,8 +36,8 @@ function App() {
   }
   
   async function countNumberSpeciesNames(results){
-    csvData = await results;      
-    for(var i = 1; i < 500; i++) // in csvData.data[][16])
+    csvData = await results;   
+    for(var i = 1; i < numberOfImages; i++) // in csvData.data[][16])
     {
       var tempSpecies = csvData.data[i][16].split(" ");
       for(var j = 0; j < tempSpecies.length; j++)
@@ -42,41 +46,47 @@ function App() {
         speciesMap.has(tempSpecies[j]) ? speciesMap.set(tempSpecies[j], speciesMap.get(tempSpecies[j]) + 1) : speciesMap.set(tempSpecies[j], 1); 
       }
     }
-    console.log(speciesMap)
+    //console.log(speciesMap)
     formatToTextFiles();
   }
 
 
   async function formatToTextFiles(){
-    for(let i = 1; i <= 500; i++)//csvData.data.length; i++)
+    //var blackList = "mammal"; //ALL are labeled as mammal?? Should ignore for now to get better label
+    var whiteList = ["canid","felid","equid","leporid","rodent","fox","ursid","mustelid"]
+    for(var i = 1; i <= numberOfImages; i++)//csvData.data.length; i++)
     {
-      /*
-      console.log(csvData.data[i][16] + " " + 
-      ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
-      ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
-      (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
-      (parseFloat(csvData.data[i][7]) - parseFloat(csvData.data[i][5])).toString());
-      */
-
       //in the format of <object-class> <x_center> <y_center> <width> <height>
       var tempSpecies = csvData.data[i][16].split(" ");
-      var usedSpecies = tempSpecies[0];
-      for(var j = 1; j < tempSpecies.length; j++)
+      var usedSpecies = null;// = tempSpecies[0]; 
+      //console.log(tempSpecies)
+      
+      for(var j = 0; j < tempSpecies.length; j++)
       {
-        if(speciesMap[tempSpecies[j]] > speciesMap[usedSpecies])
+        if(whiteList.includes(tempSpecies[j]))
         {
           usedSpecies = tempSpecies[j];
         }
+        /* Can be used late if we decide to use ALL species/images
+        if(speciesMap[tempSpecies[j]] > speciesMap[usedSpecies] && tempSpecies[j] != blackList)
+        {
+          usedSpecies = tempSpecies[j];
+        }
+        else if(tempSpecies == null)
+        {
+          tempSpecies[i]; //i should = 0, so same as tempSpecies[0]
+        }
+        */
       }
-
-      zip.file(csvData.data[i][0] + ".txt", usedSpecies + " " + 
-      ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
-      ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
-      (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
-      (parseFloat(csvData.data[i][7]) - parseFloat(csvData.data[i][5])).toString());
+      if(usedSpecies != null)
+      {
+        zip.file(csvData.data[i][0] + ".txt", usedSpecies + " " + 
+        ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
+        ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
+        (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
+        (parseFloat(csvData.data[i][7]) - parseFloat(csvData.data[i][5])).toString());
+      }
     }
-
-
   }
   async function downloadParsedData(){
     zip.generateAsync({type: "blob"}).then(content => {
