@@ -1,21 +1,22 @@
 import './App.css';
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState } from "react";
 
-import * as tf from '@tensorflow/tfjs'; 
+//import * as tf from '@tensorflow/tfjs'; 
 import Papa from "papaparse"
 import FileSaver from 'file-saver'
 import JSZip from "jszip"
 
 import UploadAndDisplayImage from "./UploadAndDisplayImage"
-import DataFaces from "./data/faces_q.csv"
-import TestFaces from "./data/test.csv"
+//import DataFaces from "./data/faces_q.csv"
+//import TestFaces from "./data/test.csv"
 function App() {
   
-  var [model, setModel] = useState();
-  const [videoWidth, setVideoWidth] = useState(960);
-  const [videoHeight, setVideoHeight] = useState(640);
+  var model = useState(); //might use [model, setModel] here after we train
+  const videoWidth  = useState(960);
+  const videoHeight  = useState(640);
   //const JSZip = require('jszip')();
   var zip = new JSZip();
+  var speciesMap = new Map();
 
   const csvUrl = "https://raw.githubusercontent.com/arfafax/E621-Face-Dataset/master/faces_q.csv";
 
@@ -25,24 +26,50 @@ function App() {
       download: true,
       complete: async function(results) {
         csvData = (await results);
-        formatToTextFiles();
+        countNumberSpeciesNames(await results );
       }
     });
   }
   
+  async function countNumberSpeciesNames(results){
+    csvData = await results;      
+    for(var i = 1; i < 500; i++) // in csvData.data[][16])
+    {
+      var tempSpecies = csvData.data[i][16].split(" ");
+      for(var j = 0; j < tempSpecies.length; j++)
+      {
+        //console.log(tempSpecies[j])
+        speciesMap.has(tempSpecies[j]) ? speciesMap.set(tempSpecies[j], speciesMap.get(tempSpecies[j]) + 1) : speciesMap.set(tempSpecies[j], 1); 
+      }
+    }
+    console.log(speciesMap)
+    formatToTextFiles();
+  }
 
 
   async function formatToTextFiles(){
-    for(let i = 1; i <= 10; i++)//csvData.data.length; i++)
+    for(let i = 1; i <= 500; i++)//csvData.data.length; i++)
     {
+      /*
       console.log(csvData.data[i][16] + " " + 
       ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
       ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
       (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
       (parseFloat(csvData.data[i][7]) - parseFloat(csvData.data[i][5])).toString());
-    
+      */
+
       //in the format of <object-class> <x_center> <y_center> <width> <height>
-      zip.file(csvData.data[i][0] + ".txt", csvData.data[i][16] + " " + 
+      var tempSpecies = csvData.data[i][16].split(" ");
+      var usedSpecies = tempSpecies[0];
+      for(var j = 1; j < tempSpecies.length; j++)
+      {
+        if(speciesMap[tempSpecies[j]] > speciesMap[usedSpecies])
+        {
+          usedSpecies = tempSpecies[j];
+        }
+      }
+
+      zip.file(csvData.data[i][0] + ".txt", usedSpecies + " " + 
       ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
       ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
       (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
