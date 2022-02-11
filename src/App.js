@@ -1,28 +1,62 @@
-import logo from './logo.svg';
 import './App.css';
 import React, { useEffect, useState, useRef } from "react";
-import * as cocoSsd from "@tensorflow-models/coco-ssd";
-import * as tf from '@tensorflow/tfjs'; 
 
-import Webcam from "react-webcam";
+import * as tf from '@tensorflow/tfjs'; 
+import Papa from "papaparse"
+import FileSaver from 'file-saver'
+import JSZip from "jszip"
 
 import UploadAndDisplayImage from "./UploadAndDisplayImage"
-
 import DataFaces from "./data/faces_q.csv"
 import TestFaces from "./data/test.csv"
-import TrainDataStream from "./data/train/"
 function App() {
-
+  
   var [model, setModel] = useState();
   const [videoWidth, setVideoWidth] = useState(960);
   const [videoHeight, setVideoHeight] = useState(640);
+  //const JSZip = require('jszip')();
+  var zip = new JSZip();
 
-  //Create a text file for EACH LINE (each image) from the csv file
+  const csvUrl = "https://raw.githubusercontent.com/arfafax/E621-Face-Dataset/master/faces_q.csv";
+
+  var csvData;
+  async function getCSVData(){
+    Papa.parse(csvUrl, {
+      download: true,
+      complete: async function(results) {
+        csvData = (await results);
+        formatToTextFiles();
+      }
+    });
+  }
+  
 
 
+  async function formatToTextFiles(){
+    for(let i = 1; i <= 10; i++)//csvData.data.length; i++)
+    {
+      console.log(csvData.data[i][16] + " " + 
+      ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
+      ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
+      (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
+      (parseFloat(csvData.data[i][7]) - parseFloat(csvData.data[i][5])).toString());
+    
+      //in the format of <object-class> <x_center> <y_center> <width> <height>
+      zip.file(csvData.data[i][0] + ".txt", csvData.data[i][16] + " " + 
+      ((parseFloat(csvData.data[i][6]) + parseFloat(csvData.data[i][4])) / 2).toString() + " " +
+      ((parseFloat(csvData.data[i][7]) + parseFloat(csvData.data[i][5])) / 2).toString() + " " + 
+      (parseFloat(csvData.data[i][6]) - parseFloat(csvData.data[i][4])).toString() + " " + 
+      (parseFloat(csvData.data[i][7]) - parseFloat(csvData.data[i][5])).toString());
+    }
 
 
-
+  }
+  async function downloadParsedData(){
+    zip.generateAsync({type: "blob"}).then(content => {
+      FileSaver.saveAs(content, "testData.zip");
+      //console.log("TEST")
+    });
+  }
 
 
 /* TENSORFLOW ATEMPT at CNN, need training images to be tensors
@@ -142,7 +176,12 @@ function App() {
       <button variant={"contained"} style={{ color: "white",backgroundColor: "blueviolet",width: "50%",maxWidth: "250px", top: "100px"}} onClick={() => { predictionFunction(); }}>
         Start Detect
       </button>
-
+      <button variant={"contained"} style={{ color: "white",backgroundColor: "green",width: "50%",maxWidth: "250px", top: "100px"}} onClick={() => {   getCSVData(); }}>
+        Parse Data (Temp)
+      </button>
+      <button variant={"contained"} style={{ color: "white",backgroundColor: "red",width: "50%",maxWidth: "250px", top: "100px"}} onClick={() => {   downloadParsedData(); }}>
+        Download Data (Temp)
+      </button>
 
 
     </div>
